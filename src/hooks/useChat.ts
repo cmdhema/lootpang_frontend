@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 import { io, Socket } from 'socket.io-client';
 import type { ChatMessage, EIP712Data } from '../types/chat';
 
-const BACKEND_URL = 'http://localhost:3001';
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
