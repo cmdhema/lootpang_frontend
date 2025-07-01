@@ -89,8 +89,11 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ messages }) => {
           fontSize: '15px'
         }}>
           <div>
-            <div style={{ fontSize: '32px', marginBottom: '12px' }}>🌌</div>
-            <div>Start a conversation with the Quest AI Agent</div>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>🚀</div>
+            <div style={{ marginBottom: '8px', fontWeight: '600', color: '#94a3b8' }}>
+              LootPang Cross-Chain Lending
+            </div>
+            <div>Connect your wallet to start your quest journey!</div>
           </div>
         </div>
       )}

@@ -202,7 +202,16 @@ export function useChat() {
       const successMessage: ChatMessage = {
         id: uuidv4(),
         senderName: 'System',
-        text: `✅ Wallet connected successfully! Address: ${address.substring(0, 6)}...${address.substring(38)}${networkMessage}`,
+        text: `✅ **Wallet Connected Successfully!**
+
+📍 **Address:** ${address.substring(0, 6)}...${address.substring(38)}${networkMessage}
+
+🎯 **Next Steps:**
+1. Check your current collateral: \`status\`
+2. Deposit collateral: \`deposit 0.1 eth\`
+3. Borrow KK tokens: \`borrow 10 kkcoin\`
+
+💡 **Need help?** Just ask me anything about lending, deposits, or quests!`,
         isUser: false
       };
       
@@ -357,7 +366,32 @@ export function useChat() {
       const welcomeMessage: ChatMessage = {
         id: uuidv4(),
         senderName: 'LootPang Agent',
-        text: 'Hello! I am LootPang\'s quest agent. Please let me know if you need help with quest completion.',
+        text: `🌟 **Welcome to LootPang Cross-Chain Lending!** 🌟
+
+I'm your quest completion assistant! Here's how I can help you:
+
+🔗 **Cross-Chain Lending System:**
+• Use **Sepolia ETH** as collateral
+• Borrow **KK Tokens** on **Base Sepolia** network
+• Complete quests and earn rewards!
+
+💰 **Lending Requirements:**
+• **1 KK Token** requires **~0.01 ETH** collateral
+• **10 KK Tokens** requires **~0.1 ETH** collateral
+• **100 KK Tokens** requires **~1.0 ETH** collateral
+
+🚀 **Getting Started:**
+1. Connect your wallet (top-right button)
+2. Try: \`deposit 0.1 eth\` to add collateral
+3. Then: \`borrow 10 kkcoin\` to get tokens
+4. Complete quests to earn rewards!
+
+💡 **Quick Commands:**
+• \`deposit [amount] eth\` - Add collateral
+• \`borrow [amount] kkcoin\` - Request loan
+• \`status\` - Check your loan status
+
+Ready to start your quest journey? 🎯`,
         isUser: false
       };
       
