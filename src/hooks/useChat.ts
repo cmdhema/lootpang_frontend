@@ -224,16 +224,6 @@ export function useChat() {
       return;
     }
 
-    // 메시지 데이터 구조
-    const messageData = {
-      text: text,
-      roomId: roomId.current,
-      userId: walletAddress
-    };
-
-    console.log('[sendMessage] 전송할 데이터:', messageData);
-    socketRef.current.emit('message', messageData);
-    
     // 채팅에 사용자 메시지 표시
     if (displayInChat) {
       const userMessage: ChatMessage = {
@@ -245,7 +235,39 @@ export function useChat() {
       
       console.log('[sendMessage] 사용자 메시지 추가:', userMessage);
       setMessages(prev => [...prev, userMessage]);
+      
+      // 사용자 메시지 전송 후 즉시 analyzing 메시지 추가
+      const analyzingMessages = [
+        '🤖 Analyzing your request...',
+        '🔍 Processing your message...',
+        '⚡ Thinking about your request...',
+        '🧠 Understanding your needs...',
+        '💭 Analyzing blockchain data...'
+      ];
+      
+      const randomMessage = analyzingMessages[Math.floor(Math.random() * analyzingMessages.length)];
+      
+      const analyzingMessage: ChatMessage = {
+        id: uuidv4(),
+        senderName: 'LootPang Agent',
+        text: randomMessage,
+        isUser: false,
+        isAnalyzing: true
+      };
+      
+      console.log('[sendMessage] Analyzing 메시지 추가:', analyzingMessage);
+      setMessages(prev => [...prev, analyzingMessage]);
     }
+
+    // 메시지 데이터 구조
+    const messageData = {
+      text: text,
+      roomId: roomId.current,
+      userId: walletAddress
+    };
+
+    console.log('[sendMessage] 전송할 데이터:', messageData);
+    socketRef.current.emit('message', messageData);
   };
 
   // 소켓 연결 및 이벤트 리스너 설정
@@ -291,7 +313,19 @@ export function useChat() {
         };
         
         console.log('[messageBroadcast] 에이전트 메시지 추가:', agentMessage);
-        setMessages(prev => [...prev, agentMessage]);
+        
+        // analyzing 메시지를 실제 응답으로 교체
+        setMessages(prev => {
+          // 마지막 메시지가 analyzing 메시지인지 확인
+          const lastMessage = prev[prev.length - 1];
+          if (lastMessage && lastMessage.isAnalyzing) {
+            // analyzing 메시지를 실제 응답으로 교체
+            return [...prev.slice(0, -1), agentMessage];
+          } else {
+            // analyzing 메시지가 없으면 그냥 추가
+            return [...prev, agentMessage];
+          }
+        });
         
       } catch (error) {
         console.error('[messageBroadcast] 메시지 처리 오류:', error);

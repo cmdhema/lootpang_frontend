@@ -56,8 +56,22 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ messages }) => {
               fontFamily: 'inherit', 
               fontSize: '15px',
               lineHeight: '1.5',
-              color: msg.isUser ? '#1e293b' : '#cbd5e1'
+              color: msg.isUser ? '#1e293b' : '#cbd5e1',
+              display: 'flex',
+              alignItems: 'center',
+              gap: msg.isAnalyzing ? '8px' : '0'
             }}>
+              {msg.isAnalyzing && (
+                <div style={{
+                  display: 'inline-block',
+                  width: '16px',
+                  height: '16px',
+                  border: '2px solid #a78bfa',
+                  borderTop: '2px solid transparent',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }} />
+              )}
               {msg.text}
             </div>
           </div>

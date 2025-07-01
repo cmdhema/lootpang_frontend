@@ -26,4 +26,5 @@ export interface ChatMessage {
   isUser: boolean;
   action?: 'AWAITING_SIGNATURE';
   dataToSign?: EIP712Data;
+  isAnalyzing?: boolean; // 분석 중 상태
 } 
