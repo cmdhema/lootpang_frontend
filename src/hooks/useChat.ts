@@ -19,13 +19,29 @@ export function useChat() {
     signerRef.current = signer;
   }, [signer]);
 
+  // 에러 메시지를 채팅창에 표시하는 함수
+  const showErrorMessage = (title: string, message: string, emoji: string = '❌') => {
+    const errorMessage: ChatMessage = {
+      id: uuidv4(),
+      senderName: 'System',
+      text: `${emoji} **${title}**\n\n${message}`,
+      isUser: false
+    };
+    
+    setMessages(prev => [...prev, errorMessage]);
+  };
+
   // 서명 처리 함수
   const handleSignMessage = async (dataToSign: EIP712Data) => {
     console.log('[handleSignMessage] 서명 요청:', dataToSign);
     
     if (!signerRef.current) {
       console.log('[handleSignMessage] Wallet not connected');
-      alert('Please connect your wallet first to sign.');
+      showErrorMessage(
+        'Wallet Not Connected',
+        'Please connect your wallet first to sign transactions.\n\n🔗 Click the "Connect Wallet" button to get started.',
+        '🔒'
+      );
       await connectWallet();
       return;
     }
@@ -41,11 +57,31 @@ export function useChat() {
       
       if (network.chainId !== requiredChainId) {
         console.log('[handleSignMessage] 네트워크 불일치, 전환 요청');
+        
+        // 네트워크 불일치 안내 메시지
+        showErrorMessage(
+          'Wrong Network Detected',
+          `🔗 **Current Network:** ${network.name || 'Unknown'} (Chain ID: ${network.chainId})\n🎯 **Required Network:** Base Sepolia (Chain ID: 84532)\n\n⚡ **Action Required:**\n1. Open MetaMask\n2. Switch to Base Sepolia network\n3. Try your transaction again\n\n💡 We'll attempt to switch automatically...`,
+          '🌐'
+        );
+        
         const switchSuccess = await switchToBaseNetwork();
         if (!switchSuccess) {
-          alert('Please switch to Base Sepolia network.');
+          showErrorMessage(
+            'Network Switch Failed',
+            '❌ **Failed to switch to Base Sepolia network.**\n\n🔧 **Manual Steps:**\n1. Open MetaMask\n2. Click network dropdown\n3. Select "Base Sepolia"\n4. If not available, add it manually:\n   - Network Name: Base Sepolia\n   - RPC URL: https://sepolia.base.org\n   - Chain ID: 84532\n   - Symbol: ETH',
+            '⚠️'
+          );
           return;
         }
+        
+        // 네트워크 전환 성공
+        showErrorMessage(
+          'Network Switched Successfully',
+          '✅ **Successfully switched to Base Sepolia network!**\n\n🎯 You can now proceed with your transaction.',
+          '🎉'
+        );
+        
         // 네트워크 전환 후 새로운 signer 생성
         const newProvider = new ethers.BrowserProvider(window.ethereum!);
         const newSigner = await newProvider.getSigner();
@@ -87,6 +123,11 @@ export function useChat() {
       // 서명을 백엔드로 전송 (원본 서명 데이터도 함께 전송)
       if (!socketRef.current?.connected) {
         console.log('[handleSignMessage] 소켓이 연결되지 않음');
+        showErrorMessage(
+          'Connection Error',
+          '📡 **Server connection lost.**\n\n🔄 **Please try:**\n1. Refresh the page\n2. Check your internet connection\n3. Try again in a moment',
+          '📡'
+        );
         return;
       }
 
@@ -110,8 +151,22 @@ export function useChat() {
       
     } catch (error: any) {
       console.error('[handleSignMessage] Signature failed:', error);
-      alert(`Signature failed: ${error.message}`);
-      sendMessage("Signature was rejected.", false);
+      
+      // 사용자가 서명을 거부한 경우
+      if (error.code === 4001 || error.message?.includes('User rejected')) {
+        showErrorMessage(
+          'Transaction Cancelled',
+          '✋ **You cancelled the transaction.**\n\n💡 **To proceed:**\n- Try the command again\n- Approve the transaction in MetaMask when prompted',
+          '🚫'
+        );
+      } else {
+        // 기타 서명 오류
+        showErrorMessage(
+          'Signature Failed',
+          `❌ **Transaction signature failed.**\n\n🔍 **Error Details:**\n${error.message || 'Unknown error occurred'}\n\n🔄 **Please try:**\n1. Check your wallet connection\n2. Ensure sufficient gas fees\n3. Try the transaction again`,
+          '⚠️'
+        );
+      }
     }
   };
 
@@ -172,7 +227,11 @@ export function useChat() {
   const connectWallet = async () => {
     if (typeof window.ethereum === 'undefined') {
       console.log('[connectWallet] MetaMask not installed');
-      alert('MetaMask is not installed.');
+      showErrorMessage(
+        'MetaMask Not Found',
+        '🦊 **MetaMask is not installed.**\n\n📥 **To get started:**\n1. Visit metamask.io\n2. Install MetaMask extension\n3. Create or import a wallet\n4. Return here to connect\n\n💡 MetaMask is required for blockchain transactions.',
+        '🦊'
+      );
       return;
     }
 
@@ -217,9 +276,24 @@ export function useChat() {
       
       setMessages(prev => [...prev, successMessage]);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('[connectWallet] Wallet connection failed:', error);
-      alert('Failed to connect wallet.');
+      
+      // 사용자가 연결을 거부한 경우
+      if (error.code === 4001) {
+        showErrorMessage(
+          'Wallet Connection Cancelled',
+          '✋ **You cancelled the wallet connection.**\n\n🔗 **To connect:**\n1. Click "Connect Wallet" again\n2. Approve the connection in MetaMask\n3. Select your account',
+          '🚫'
+        );
+      } else {
+        // 기타 연결 오류
+        showErrorMessage(
+          'Wallet Connection Failed',
+          `❌ **Failed to connect wallet.**\n\n🔍 **Error Details:**\n${error.message || 'Unknown error occurred'}\n\n🔄 **Please try:**\n1. Refresh the page\n2. Check MetaMask is unlocked\n3. Try connecting again`,
+          '⚠️'
+        );
+      }
     }
   };
   
@@ -230,6 +304,11 @@ export function useChat() {
     
     if (!socketRef.current?.connected) {
       console.log('[sendMessage] 소켓이 연결되지 않음');
+      showErrorMessage(
+        'Server Connection Lost',
+        '📡 **Unable to send message - server disconnected.**\n\n🔄 **Please:**\n1. Check your internet connection\n2. Refresh the page\n3. Try sending the message again',
+        '📡'
+      );
       return;
     }
 
@@ -344,13 +423,22 @@ export function useChat() {
     // 에러 이벤트
     socket.on('error', (error: any) => {
       console.error('[socket] Error:', error);
-      alert(`Server error: ${error.message || 'Unknown error'}`);
+      showErrorMessage(
+        'Server Error',
+        `🚨 **Server encountered an error.**\n\n🔍 **Details:**\n${error.message || 'Unknown server error'}\n\n🔄 **Please try:**\n1. Refresh the page\n2. Wait a moment and try again\n3. Contact support if issue persists`,
+        '🚨'
+      );
     });
 
     // 연결 에러 이벤트
     socket.on('connect_error', (error: any) => {
       console.error('[socket] 연결 에러:', error);
       setIsConnected(false);
+      showErrorMessage(
+        'Connection Failed',
+        `📡 **Unable to connect to server.**\n\n🔍 **Possible causes:**\n- Server is temporarily unavailable\n- Network connection issues\n- Firewall blocking connection\n\n🔄 **Please try:**\n1. Check your internet connection\n2. Refresh the page\n3. Try again in a few minutes`,
+        '📡'
+      );
     });
 
     // 정리 함수

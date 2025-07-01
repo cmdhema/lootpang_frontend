@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import type { ChatMessage } from '@/types/chat';
 
 interface ChatHistoryProps {
@@ -6,19 +6,67 @@ interface ChatHistoryProps {
 }
 
 export const ChatHistory: React.FC<ChatHistoryProps> = ({ messages }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isUserScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // 사용자가 스크롤하고 있는지 감지
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10; // 10px 여유
+      
+      if (!isAtBottom) {
+        isUserScrollingRef.current = true;
+        
+        // 3초 후 자동 스크롤 재개
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+        scrollTimeoutRef.current = setTimeout(() => {
+          isUserScrollingRef.current = false;
+        }, 3000);
+      } else {
+        isUserScrollingRef.current = false;
+      }
+    }
+  };
+
+  // 메시지가 추가될 때마다 스크롤을 아래로 이동 (사용자가 스크롤 중이 아닐 때만)
+  useEffect(() => {
+    if (scrollRef.current && !isUserScrollingRef.current) {
+      const scrollElement = scrollRef.current;
+      scrollElement.scrollTo({
+        top: scrollElement.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [messages]);
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
   return (
-    <div style={{ 
-      width: '100%', 
-      height: '400px', 
-      overflowY: 'auto', 
-      border: '1px solid rgba(148, 163, 184, 0.2)', 
-      padding: '20px',
-      borderRadius: '16px',
-      background: 'rgba(15, 23, 42, 0.4)',
-      marginBottom: '16px',
-      scrollbarWidth: 'thin',
-      scrollbarColor: '#64748b rgba(30, 41, 59, 0.5)'
-    }}>
+    <div 
+      ref={scrollRef}
+      onScroll={handleScroll}
+      style={{ 
+        width: '100%', 
+        height: '400px', 
+        overflowY: 'auto', 
+        border: '1px solid rgba(148, 163, 184, 0.2)', 
+        padding: '20px',
+        borderRadius: '16px',
+        background: 'rgba(15, 23, 42, 0.4)',
+        marginBottom: '16px',
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#64748b rgba(30, 41, 59, 0.5)'
+      }}>
       {messages.map((msg) => (
         <div key={msg.id} style={{ 
           marginBottom: '16px',
